@@ -12,7 +12,7 @@
 
 
 	<!-- 自动扫描(自动注入) -->
-	<context:component-scan base-package="com.flexcat.controller;com.flexcat.*。controller" />
+	<context:component-scan base-package="com.flexcat.controller;com.flexcat.*.controller" />
 
 	<!-- 自动注册DefaultAnnotationHandlerMapping与AnnotationMethodHandlerAdapter，提供数据绑定支持，如@RequestMapping -->
 	<mvc:annotation-driven />

@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app id="WebApp_ID" version="3.0" 
+	xmlns="http://java.sun.com/xml/ns/javaee" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd">
+	
+	<!-- 
+	初始化过程：
+		1.在启动Web项目时，容器(比如Tomcat)会读web.xml配置文件中的两个节点<listener>和<contex-param>。
+		2.接着容器会创建一个ServletContext(上下文),应用范围内即整个WEB项目都能使用这个上下文。
+		3.接着容器会将读取到<context-param>转化为键值对,并交给ServletContext。
+		4.容器创建<listener></listener>中的类实例,即创建监听
+		    （备注：listener定义的类可以是自定义的类但必须需要继承ServletContextListener）。
+		5.在监听的类中会有一个contextInitialized(ServletContextEvent event)初始化方法，
+		       在这个方法中可以通过event.getServletContext().getInitParameter("contextConfigLocation") 
+		       来得到context-param 设定的值。在这个类中还必须有一个 contextDestroyed(ServletContextEvent event) 销毁方法.
+		       用于关闭应用前释放资源，比如说数据库连接的关闭。
+		6.得到这个context-param的值之后,你就可以做一些操作了.注意,这个时候你的WEB项目还没有完全启动完成.这个动作会比所有的Servlet都要早。
+		由上面的初始化过程可知容器对于web.xml的加载过程是  context-param >> listener  >> fileter  >> servlet
+	-->
+	<!-- Spring 声明应用范围(整个WEB项目)内的上下文初始化参数。 -->
+	<context-param>
+		<!-- param-name 设定上下文的参数名称。必须是唯一名称 -->
+		<param-name>contextConfigLocation</param-name>
+		<!-- param-value 设定的参数名称的值  -->
+		<param-value>classpath:spring.xml</param-value>
+	</context-param>
+	<!-- 
+		监听器 也叫Listener，是Servlet的监听器，它可以监听客户端的请求、服务端的操作等。通过监听器，可以自动激发一些操作，比如监听在线的用户的数量。
+		  	 当增加一个HttpSession时，就激发sessionCreated(HttpSessionEvent se)方法，这样就可以给在线人数加1。
+		常用的监听接口有以下几个：
+		ServletContextListener监听ServletContext。监听WEB应用启动和销毁的事件。
+			监听器类需要实现javax.servlet.ServletContextListener接口。
+			当创建ServletContext时，激发 contextInitialized(ServletContextEvent sce)方法；
+			当销毁ServletContext时，激发 contextDestroyed(ServletContextEvent sce)方法。
+		ServletContextAttributeListener监听对ServletContext属性的操作，监听WEB应用属性改变的事件。
+			比如增加、删除、修改属性，监听器类需要实现javax.servlet.ServletContextAttributeListener接口。
+		HttpSessionListener监听HttpSession的操作。
+			当创建一个Session时，激发 sessionCreated(HttpSessionEvent se)方法；
+			当销毁一个Session时，激发 sessionDestroyed(HttpSessionEvent se)方法。
+		HttpSessionAttributeListener监听HttpSession中的属性的操作，和ServletContextAttributeListener比较类似。
+			当在Session增加一个属性时，激发 attributeAdded(HttpSessionBindingEvent se)方法；
+			当在Session删除一个属性时，激发 attributeRemoved(HttpSessionBindingEvent se)方法；
+			当在Session属性被重新设置时，激发attributeReplaced(HttpSessionBindingEvent se)方法。
+	-->
+	<listener>
+		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+	</listener>
+	
+	<!-- 
+		servlet配置 
+			为了提供初始化参数，对servlet或JSP页面定义一个定制URL或分配一个安全角色，必须首先给servlet或JSP页面一个名称。
+			可通过 servlet元素分配一个名称。最常见的格式包括servlet-name和servlet-class子元素（在web-app元素内）。
+			如下表示位于org.springframework.web.servlet.DispatcherServlet的servlet已经得到了注册名SpingMVC。
+			给 servlet一个名称具有两个主要的含义。
+			首先，初始化参数、定制的URL模式以及其他定制通过此注册名而不是类名引用此servlet。
+			其次,可在 URL而不是类名中使用此名称。
+	-->
+	<servlet>
+		<servlet-name>springmvc</servlet-name>
+		<!-- 
+			DispatcherServlet主要用作职责调度工作，本身主要用于控制流程，主要职责如下：
+			1、文件上传解析，如果请求类型是multipart将通过MultipartResolver进行文件上传解析；
+			2、通过HandlerMapping，将请求映射到处理器（返回一个HandlerExecutionChain，它包括一个处理器、多个HandlerInterceptor拦截器）；
+			3、通过HandlerAdapter支持多种类型的处理器(HandlerExecutionChain中的处理器)；
+			4、通过ViewResolver解析逻辑视图名到具体视图实现；
+			5、本地化解析；
+			6、渲染具体的视图等；
+			7、如果执行过程中遇到异常将交给HandlerExceptionResolver来解析。
+			从以上我们可以看出DispatcherServlet主要负责流程的控制（而且在流程中的每个关键点都是很容易扩展的）。 
+		-->
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<!-- 
+			配置DispatcherServlet初始化参数 
+			contextClass
+				实现WebApplicationContext接口的类，当前的servlet用它来创建上下文。如果这个参数没有指定， 默认使用XmlWebApplicationContext。
+			contextConfigLocation
+				传给上下文实例（由contextClass指定）的字符串，用来指定上下文的位置。这个字符串可以被分成多个字符串（使用逗号作为分隔符）
+				 来支持多个上下文（在多上下文的情况下，如果同一个bean被定义两次，后面一个优先）。
+			namespace
+				WebApplicationContext命名空间。默认值是[server-name]-servlet。
+		-->
+		<init-param>
+			<!-- 
+				DispatcherServlet默认使用WebApplicationContext作为上下文，Spring默认配置文件为"/WEB-INF/[servlet名字]-servlet.xml"
+				如果使用如下配置，Spring Web MVC框架将加载"classpath:spring-*.xml"来进行初始化上下文
+				而不是"/WEB-INF/[servlet名字]-servlet.xml" 
+			-->
+			<param-name>contextConfigLocation</param-name>
+			<param-value>classpath:spring-mvc.xml</param-value>
+		</init-param>
+		<!-- 
+			<context-param> ContextLoaderListener初始化的上下文加载的Bean是对于整个应用程序共享的，
+				不管是使用什么表现层技术，一般如DAO层、Service层Bean；
+			DispatcherServlet初始化的上下文加载的Bean是只对Spring Web MVC有效的Bean，
+			如Controller、HandlerMapping、HandlerAdapter等等，该初始化上下文应该只加载Web相关组件。
+			DispatcherServlet介绍: http://jinnianshilongnian.iteye.com/blog/1602617
+		-->
+	</servlet>
+	<!-- 
+		在Servlet和URL样式之间定义一个映射  
+		http://haohetao.iteye.com/blog/589017
+	-->
+	<servlet-mapping>
+		<servlet-name>springmvc</servlet-name>
+		<url-pattern>/</url-pattern>
+	</servlet-mapping>
+	
+	<!-- 
+	过滤器
+		作用：用于指定WEB容器的过滤器，在请求和响应对象在Servlet处理之前和之后，可以通过此过滤器对这两个对象进行处理。
+		filter-class 中指定的过滤器类须继承 javax.servlet.Filter 必须具有以下三种方法：
+			1.init(FilterConfig filterConfig)：初始化;
+				一般情况下时读取配置文件中的init-param参数值 如 filterConfig.getInitParameter("encoding")
+			2。doFilter(...)：用于对request,response进行处理，并能过chain.doFilter(...) 交过下一个控制器
+			3、destroy()：资源销毁
+			init方法是在WEB应用启动就会调用,doFilter则是在访问filter-mapping映射到的url时会调用。
+		http://blog.csdn.net/liaoxiaohua1981/article/details/6761053  
+	-->
+	<!-- 字符编码配置 -->
+	<filter>
+		<filter-name>encodingFilter</filter-name>
+		<filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+		<!-- 两个参数详见CharacterEncodingFilter -->
+		<init-param>
+			<param-name>encoding</param-name>
+			<param-value>UTF-8</param-value>
+		</init-param>
+		<!-- 设置为true会覆盖 request.getCharacterEncoding()方法，详见源码-->
+		<init-param>
+			<param-name>forceEncoding</param-name>
+			<param-value>true</param-value>
+		</init-param>
+	</filter>
+	<!-- 设置过滤URL -->
+	<filter-mapping>
+		<filter-name>encodingFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+	
+	<!-- session配置 -->
+	<session-config>
+		<!-- session超时时间（分钟） -->
+		<session-timeout>60</session-timeout>
+	</session-config>
+	
+	<!-- 欢迎页 -->
+	<welcome-file-list>
+		<welcome-file>index.jsp</welcome-file>
+	</welcome-file-list>
+	
+	<!-- 错误页 -->
+	<error-page>
+		<error-code>404</error-code>
+		<location>/notFound.jsp</location>
+	</error-page>
+	<error-page>
+		<exception-type>java.lang.NullException</exception-type>
+		<location>/error.jsp</location>
+	</error-page>
+	<!-- 
+		http://www.cnblogs.com/shenliang123/p/3344555.html
+		http://www.cnblogs.com/chinafine/archive/2010/09/02/1815980.html
+		http://blog.csdn.net/yakson/article/details/44832967
+		http://my.oschina.net/sherwayne/blog/262616
+	-->
+</web-app>
